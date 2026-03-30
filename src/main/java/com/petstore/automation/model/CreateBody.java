@@ -1,8 +1,11 @@
-package backend.utilities.pojo;
+package com.petstore.automation.model;
 
 import java.util.ArrayList;
 
-public class CreateBody {
+public final class CreateBody {
+
+    private CreateBody() {
+    }
 
     public static BodyPet body(int id, String name, int idCategory, String nameCategory,
                                int idTag, String nameTag, String status) {

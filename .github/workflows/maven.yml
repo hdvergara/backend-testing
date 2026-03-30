@@ -1,0 +1,83 @@
+# Tests + informe Allure. El informe se publica en GitHub Pages en push/schedule/manual (no en PR, para no pisar el sitio).
+name: Java CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # ~cada 15 días (días 1 y 15, 06:00 UTC). GitHub no soporta "cada 14 días" literal en cron.
+    - cron: "0 6 1,15 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "22"
+          distribution: temurin
+          cache: maven
+
+      - name: Tests
+        id: tests
+        continue-on-error: true
+        run: mvn -B clean test
+
+      - name: Allure report (HTML)
+        if: always()
+        run: mvn -B allure:report
+
+      - name: Upload Allure raw results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: target/allure-results/
+
+      - name: Upload Allure HTML (artefacto descargable)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: target/site/allure-report/
+
+      # Artefacto requerido por actions/deploy-pages (sitio estático)
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/site/allure-report
+
+      - name: Fallar job si los tests fallaron
+        # Con continue-on-error: true, outcome sigue siendo failure si el comando falló; conclusion puede ser success
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
+
+  deploy-pages:
+    needs: verify
+    if: |
+      always() &&
+      needs.verify.result != 'cancelled' &&
+      github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Allure report to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

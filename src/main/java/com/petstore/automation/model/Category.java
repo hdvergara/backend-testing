@@ -1,4 +1,4 @@
-package backend.utilities.pojo;
+package com.petstore.automation.model;
 
 import lombok.Builder;
 import lombok.Data;
