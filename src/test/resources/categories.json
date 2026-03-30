@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Defectos de producto / API",
+    "matchedStatuses": ["failed"]
+  },
+  {
+    "name": "Defectos de automatización",
+    "matchedStatuses": ["broken"]
+  },
+  {
+    "name": "Pruebas omitidas",
+    "matchedStatuses": ["skipped"]
+  }
+]
